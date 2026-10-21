@@ -375,6 +375,25 @@ class MapLibreMap extends StatefulWidget {
   static set useHybridComposition(bool useHybridComposition) =>
       MapLibreMethodChannel.useHybridComposition = useHybridComposition;
 
+  /// Embed the Android map through Flutter's Hybrid Composition. Ignored on
+  /// iOS and web.
+  ///
+  /// The map's native view then sits in the app's window and the system
+  /// composites it, so a map frame does not cost a Flutter frame; Flutter
+  /// renders only when its own content changes. Native views placed next to
+  /// the map, such as an animated overlay, are composited the same way. The
+  /// trade is that Flutter's own frames cost more while the map is on screen,
+  /// and `onPlatformViewCreated` fires later, after the first frame.
+  ///
+  /// Works with either value of [useHybridComposition], which only picks the
+  /// view the map renders into. Assign before the first [MapLibreMap] is built.
+  static bool get androidHybridComposition =>
+      MapLibreMethodChannel.androidHybridComposition;
+
+  static set androidHybridComposition(bool androidHybridComposition) =>
+      MapLibreMethodChannel.androidHybridComposition =
+          androidHybridComposition;
+
   /// Where the web implementation loads MapLibre GL JS from.
   ///
   /// Leave it unset and the plugin injects the build it is tested against, so

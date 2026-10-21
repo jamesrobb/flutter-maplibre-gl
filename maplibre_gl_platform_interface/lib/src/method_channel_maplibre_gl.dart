@@ -9,6 +9,11 @@ class MapLibreMethodChannel extends MapLibrePlatform {
   /// `TextureView` via MapLibre's `textureMode`.
   static bool useHybridComposition = false;
 
+  /// Backing field of `MapLibreMap.androidHybridComposition`: embed the map
+  /// through Flutter's Hybrid Composition, so the system composites the
+  /// native view and Flutter renders only when Flutter content changes.
+  static bool androidHybridComposition = false;
+
   Future<dynamic> _handleMethodCall(MethodCall call) async {
     switch (call.method) {
       case 'infoWindow#onTap':
@@ -144,7 +149,7 @@ class MapLibreMethodChannel extends MapLibrePlatform {
   ) {
     if (defaultTargetPlatform == TargetPlatform.android) {
       creationParams['options']?['useHybridComposition'] = useHybridComposition;
-      if (useHybridComposition) {
+      if (useHybridComposition || androidHybridComposition) {
         return PlatformViewLink(
           viewType: 'plugins.flutter.io/maplibre_gl',
           surfaceFactory: (context, controller) {
@@ -157,7 +162,13 @@ class MapLibreMethodChannel extends MapLibrePlatform {
             );
           },
           onCreatePlatformView: (params) {
-            final controller = PlatformViewsService.initAndroidView(
+            // initExpensiveAndroidView is Hybrid Composition; initAndroidView
+            // is the texture layer, or Virtual Display when the map is on a
+            // SurfaceView.
+            final init = androidHybridComposition
+                ? PlatformViewsService.initExpensiveAndroidView
+                : PlatformViewsService.initAndroidView;
+            final controller = init(
               id: params.id,
               viewType: 'plugins.flutter.io/maplibre_gl',
               layoutDirection: TextDirection.ltr,
