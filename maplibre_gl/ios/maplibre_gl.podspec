@@ -17,7 +17,9 @@ MapLibre GL Flutter plugin.
   s.dependency 'Flutter'
   # When updating the dependency version,
   # make sure to also update the version in Package.swift.
-  s.dependency 'MapLibre', '6.31.0'
+  # Navoa only: 6.31.0 was never published to CocoaPods (the trunk push failed),
+  # and 6.31.0 only removes an API this plugin does not use. Not for upstream.
+  s.dependency 'MapLibre', '6.30.0'
   s.swift_version = '5.0'
   s.ios.deployment_target = '13.0'
 end
