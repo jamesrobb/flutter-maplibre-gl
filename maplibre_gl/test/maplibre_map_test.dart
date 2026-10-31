@@ -130,6 +130,24 @@ void main() {
       expect(platform.lastCreationParams!['androidView'], view);
     });
 
+    test('compares by value', () {
+      const a = AndroidMapView(surface: AndroidMapSurface.textureView);
+      const b = AndroidMapView(surface: AndroidMapSurface.textureView);
+      const c = AndroidMapView(
+        surface: AndroidMapSurface.textureView,
+        composition: AndroidComposition.hybridComposition,
+      );
+
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+      expect(a, isNot(c));
+      expect(
+        c.toString(),
+        'AndroidMapView(surface: AndroidMapSurface.textureView, '
+        'composition: AndroidComposition.hybridComposition)',
+      );
+    });
+
     testWidgets('is left out when null', (tester) async {
       await tester.pumpWidget(MaterialApp(home: MapLibreMap()));
 
