@@ -113,9 +113,10 @@ build: changing `androidView` later does not affect a map already on screen.
 
 `composition` is how Flutter places that view among your widgets:
 
-- **`auto`**: Flutter picks. It paints a `TextureView` as a
+- **`auto`**: Flutter places the view itself. It paints a `TextureView` as a
   [texture layer](https://docs.flutter.dev/platform-integration/android/platform-views#texture-layer),
-  and copies a `SurfaceView` into its frame through a *Virtual Display*.
+  and copies a `SurfaceView` into its frame through a *Virtual Display*. It
+  never uses Hybrid Composition.
 - **`hybridComposition`**: Android combines the map with Flutter's content
   ([Hybrid Composition](https://docs.flutter.dev/platform-integration/android/platform-views#hybrid-composition)).
   To keep them in sync, Flutter runs its rendering on Android's UI thread while

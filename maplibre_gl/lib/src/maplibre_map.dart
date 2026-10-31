@@ -59,8 +59,9 @@ enum AndroidMapSurface {
 /// When the app enables Hybrid Composition++ and the device supports it,
 /// Flutter uses it whatever the value.
 enum AndroidComposition {
-  /// Flutter picks: a texture layer for a `TextureView`, Virtual Display for a
-  /// `SurfaceView`. The default.
+  /// Flutter places the view itself: as a texture layer for a `TextureView`,
+  /// through Virtual Display for a `SurfaceView`. Never Hybrid Composition.
+  /// The default.
   auto,
 
   /// Android combines the map with Flutter's content (Hybrid Composition).
