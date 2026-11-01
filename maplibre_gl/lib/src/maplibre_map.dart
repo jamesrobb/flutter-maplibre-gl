@@ -47,8 +47,7 @@ enum AndroidMapSurface {
   surfaceView,
 
   /// A [TextureView](https://developer.android.com/reference/android/view/TextureView).
-  /// Try it if the map stutters or flashes on fast camera moves. It draws more
-  /// slowly.
+  /// Try it if fast camera moves stutter or flash. It draws more slowly.
   textureView,
 
   /// A transparent [TextureView](https://developer.android.com/reference/android/view/TextureView):
