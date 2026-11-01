@@ -42,22 +42,26 @@ class AndroidMapView {
 
 /// The native view MapLibre draws the Android map into.
 enum AndroidMapSurface {
-  /// A `SurfaceView`, the fastest. The default.
+  /// A [SurfaceView](https://developer.android.com/reference/android/view/SurfaceView), the fastest.
+  /// The default.
   surfaceView,
 
-  /// A `TextureView`. Try it if the map stutters or flashes on fast camera
-  /// moves. It draws more slowly.
+  /// A [TextureView](https://developer.android.com/reference/android/view/TextureView).
+  /// Try it if the map stutters or flashes on fast camera moves. It draws more
+  /// slowly.
   textureView,
 
-  /// A transparent `TextureView`: widgets behind the map show through where
-  /// the style has no background.
+  /// A transparent [TextureView](https://developer.android.com/reference/android/view/TextureView):
+  /// widgets behind the map show through where the style has no background.
+  /// It draws more slowly, like [textureView].
   translucentTextureView,
 }
 
 /// Who puts the Android map on screen with your widgets.
 ///
-/// If the app enables Hybrid Composition++ and the device supports it,
-/// Android does it, whatever the value.
+/// If the app enables
+/// [Hybrid Composition++](https://maplibre.org/flutter-maplibre-gl/advanced/performance/#hybrid-composition)
+/// and the device supports it, Android does it, whatever the value.
 enum AndroidComposition {
   /// Flutter draws the map into its own frame, like any widget. The default.
   flutter,
