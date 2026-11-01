@@ -85,8 +85,8 @@ class _MapLibreNativePlatform extends MapLibrePlatform
     if (defaultTargetPlatform == TargetPlatform.android) {
       final view = _androidView ??= _androidViewOf(creationParams);
       final params = _creationParams(creationParams, android: view);
-      // With auto, AndroidView lets Flutter pick; Hybrid Composition needs
-      // the view created here.
+      // AndroidView lets Flutter draw the map into its frame; Hybrid
+      // Composition needs the view created here.
       if (view.composition == AndroidComposition.hybridComposition) {
         return PlatformViewLink(
           viewType: 'plugins.flutter.io/maplibre_gl',
