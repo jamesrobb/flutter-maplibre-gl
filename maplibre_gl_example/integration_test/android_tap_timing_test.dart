@@ -13,20 +13,20 @@
 //
 // The assertions only run on Android; elsewhere the tests are no-ops so the
 // suite stays green everywhere.
-import 'dart:developer' show Timeline;
 import 'dart:math' show Point;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
+import 'support/finger.dart';
 import 'support/map_harness.dart';
 
 const _center = LatLng(0, 0);
 
-/// Well inside the double-tap timeout (300 ms on Android), with room for the
-/// platform view to deliver the event.
-const _beforeDoubleTapTimeout = Duration(milliseconds: 120);
+/// Before the double-tap timeout (300 ms on Android), with room for a slow
+/// emulator to deliver the event and answer the feature query.
+const _beforeDoubleTapTimeout = Duration(milliseconds: 200);
 
 bool get _onAndroid => testPlatform == TestPlatform.android;
 
@@ -42,7 +42,7 @@ void main() {
         doubleClickZoomEnabled: false,
       );
 
-      final finger = _Finger(tester);
+      final finger = Finger(tester);
       await finger.down(map.circleCentre);
       await finger.up();
       await pumpFor(tester, _beforeDoubleTapTimeout);
@@ -65,7 +65,7 @@ void main() {
     if (!_onAndroid) return;
     final map = await _pumpMapWithCircle(tester, doubleClickZoomEnabled: false);
 
-    final finger = _Finger(tester);
+    final finger = Finger(tester);
     // Away from the circle: 100 px at zoom 10 is far outside its 30 px radius.
     await finger.down(map.circleCentre + const Offset(100, 100));
     await finger.up();
@@ -97,7 +97,7 @@ void main() {
         doubleClickZoomEnabled: true,
       );
 
-      final finger = _Finger(tester);
+      final finger = Finger(tester);
       await finger.down(map.circleCentre);
       await finger.up();
       await pumpFor(tester, _beforeDoubleTapTimeout);
@@ -115,28 +115,6 @@ void main() {
 /// Lets the platform view and the double-tap timeout run out.
 Future<void> _settle(WidgetTester tester) =>
     pumpFor(tester, const Duration(milliseconds: 700));
-
-/// One finger whose events carry real timestamps. Android times long presses
-/// from the event's down time; `TestGesture`'s default zero timestamps make
-/// every touch a long press. Timeline.now reads the same clock as MotionEvents.
-class _Finger {
-  _Finger(this.tester);
-
-  final WidgetTester tester;
-  late TestGesture _gesture;
-
-  Duration get _now => Duration(microseconds: Timeline.now);
-
-  Future<void> down(Offset at) async {
-    _gesture = await tester.createGesture();
-    await _gesture.down(at, timeStamp: _now);
-    await tester.pump(const Duration(milliseconds: 16));
-  }
-
-  Future<void> up() async {
-    await _gesture.up(timeStamp: _now);
-  }
-}
 
 class _MapProbe {
   final featureTaps = <String>[];

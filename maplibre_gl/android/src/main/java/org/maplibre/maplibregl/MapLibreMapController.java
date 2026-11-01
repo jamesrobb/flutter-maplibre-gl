@@ -20,6 +20,7 @@ import android.util.Log;
 import android.util.Pair;
 import android.content.ComponentCallbacks2;
 import android.content.res.Configuration;
+import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.TextureView;
@@ -277,11 +278,13 @@ final class MapLibreMapController
   // From the start of a drag until the last finger lifts or a second finger comes down: the map
   // gets none of the gesture.
   private boolean dragOwnsGesture;
-  // Where the finger came down, while the touch still looks like a tap: one finger, within the
-  // touch slop, up before the long-press timeout. Null otherwise. See reportsTapsOnTouchUp.
-  private PointF tapDown;
-  private long tapDownTime;
-  private int touchSlop;
+  // Reports taps on touch-up while reportsTapsOnTouchUp. A framework detector without a double-tap
+  // listener: it judges a tap as the map's own detector does (touch slop, long press, gesture
+  // classification, on every Android version) but does not wait for a second tap.
+  private GestureDetector tapDetector;
+  // A tap reported on touch-up whose late onMapClick from MapLibre may still come. The next touch
+  // down cancels that onMapClick, so it clears this too.
+  private boolean tapReportedOnTouchUp;
   private MapSnapshotter activeSnapshotter;
   // The takeSnapshot call activeSnapshotter answers.
   private MethodChannel.Result activeSnapshotResult;
@@ -607,7 +610,22 @@ final class MapLibreMapController
     if (androidGesturesManager != null) {
       androidGesturesManager.setMoveGestureListener(new MoveGestureListener());
     }
-    touchSlop = ViewConfiguration.get(mapView.getContext()).getScaledTouchSlop();
+    tapDetector =
+        new GestureDetector(
+            mapView.getContext(),
+            new GestureDetector.SimpleOnGestureListener() {
+              @Override
+              public boolean onSingleTapUp(MotionEvent event) {
+                if (reportsTapsOnTouchUp()) {
+                  final PointF pointf = new PointF(event.getX(), event.getY());
+                  reportTap(pointf, mapLibreMap.getProjection().fromScreenLocation(pointf));
+                  tapReportedOnTouchUp = true;
+                }
+                return true;
+              }
+            });
+    // The listener is also a double-tap listener, which would make the detector wait.
+    tapDetector.setOnDoubleTapListener(null);
     mapView.setOnTouchListener(
         new View.OnTouchListener() {
           @Override
@@ -4219,9 +4237,11 @@ final class MapLibreMapController
 
   @Override
   public boolean onMapClick(@NonNull LatLng point) {
-    // MapLibre confirms a single tap only after the double-tap timeout. While double-tap zoom
-    // is off that wait buys nothing, so the tap was already reported from onMapTouch.
-    if (reportsTapsOnTouchUp()) {
+    // MapLibre confirms a single tap only after the double-tap timeout. A tap tapDetector already
+    // reported on touch-up is not reported again; any other tap is, even while double-tap zoom
+    // is off, so a tap the two detectors judge differently arrives late rather than never.
+    if (tapReportedOnTouchUp) {
+      tapReportedOnTouchUp = false;
       return true;
     }
     reportTap(mapLibreMap.getProjection().toScreenLocation(point), point);
@@ -4229,12 +4249,17 @@ final class MapLibreMapController
   }
 
   /**
-   * Whether taps are reported from the touch-up in {@link #onMapTouch} rather than from {@link
-   * #onMapClick}. True while double-tap zoom is off: a single tap then needs no confirmation that
-   * a second tap is not coming, and iOS reports it on touch-up in that case too.
+   * Whether taps are reported on touch-up by {@link #tapDetector} rather than from {@link
+   * #onMapClick}. True while a double tap does not zoom, which in MapLibre takes both zoom and
+   * double-tap gestures: a single tap then needs no confirmation that a second tap is not coming,
+   * and iOS reports it on touch-up in that case too.
    */
   private boolean reportsTapsOnTouchUp() {
-    return mapLibreMap != null && !mapLibreMap.getUiSettings().isDoubleTapGesturesEnabled();
+    if (mapLibreMap == null) {
+      return false;
+    }
+    final UiSettings uiSettings = mapLibreMap.getUiSettings();
+    return !(uiSettings.isZoomGesturesEnabled() && uiSettings.isDoubleTapGesturesEnabled());
   }
 
   /** Reports a tap at {@code pointf}: the feature under it, if any, and the map click. */
@@ -4907,44 +4932,11 @@ final class MapLibreMapController
 
   // Every touch on the map passes through here before the map's own gesture detector sees it.
   private boolean onMapTouch(View view, MotionEvent event) {
-    trackTap(event);
-    return androidGesturesManager != null && onDragTouch(view, event);
-  }
-
-  // Recognizes a tap from the raw events, the same way the map's detector does, minus its wait
-  // for a possible second tap. Only reports while reportsTapsOnTouchUp.
-  private void trackTap(MotionEvent event) {
-    switch (event.getActionMasked()) {
-      case MotionEvent.ACTION_DOWN:
-        tapDown = new PointF(event.getX(), event.getY());
-        tapDownTime = event.getEventTime();
-        break;
-      case MotionEvent.ACTION_MOVE:
-        if (tapDown != null && !withinTouchSlop(event)) {
-          tapDown = null;
-        }
-        break;
-      case MotionEvent.ACTION_UP:
-        if (tapDown != null
-            && withinTouchSlop(event)
-            && event.getEventTime() - tapDownTime < ViewConfiguration.getLongPressTimeout()
-            && reportsTapsOnTouchUp()) {
-          reportTap(tapDown, mapLibreMap.getProjection().fromScreenLocation(tapDown));
-        }
-        tapDown = null;
-        break;
-      case MotionEvent.ACTION_POINTER_DOWN:
-      case MotionEvent.ACTION_CANCEL:
-        tapDown = null;
-        break;
-      default:
-        break;
+    if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+      tapReportedOnTouchUp = false;
     }
-  }
-
-  private boolean withinTouchSlop(MotionEvent event) {
-    return Math.abs(event.getX() - tapDown.x) <= touchSlop
-        && Math.abs(event.getY() - tapDown.y) <= touchSlop;
+    tapDetector.onTouchEvent(event);
+    return androidGesturesManager != null && onDragTouch(view, event);
   }
 
   private boolean onDragTouch(View view, MotionEvent event) {
