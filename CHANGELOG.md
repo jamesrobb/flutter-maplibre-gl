@@ -5,6 +5,9 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ## Unreleased
 
+### Added
+* **Android, iOS**: [`takeSnapshot`](https://maplibre.org/flutter-maplibre-gl/advanced/snapshot/#attribution-and-logo) takes `attributionEnabled` and `logoEnabled`, to leave the attribution text of the style's sources or the MapLibre logo out of the picture. Both are drawn by default, as before, whatever the widget's own settings. Web snapshots never had either.
+
 ### Fixed
 * **iOS**: `takeSnapshot` before the map has a size waits for the first layout, as the camera calls do. It returned the whole world at zoom 0.
 

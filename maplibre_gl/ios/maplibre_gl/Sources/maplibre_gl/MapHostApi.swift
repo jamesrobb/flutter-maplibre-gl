@@ -188,6 +188,8 @@ final class MapHostApi: MapLibreMapHostApi {
     func mapTakeSnapshot(
         width: Int64?,
         height: Int64?,
+        attributionEnabled: Bool,
+        logoEnabled: Bool,
         completion: @escaping (Result<FlutterStandardTypedData?, Error>) -> Void
     ) {
         // The snapshot is drawn with the map view's current camera. Before the
@@ -195,7 +197,13 @@ final class MapHostApi: MapLibreMapHostApi {
         // snapshot taken then shows the whole world at zoom 0. readsCamera
         // makes the call wait, as the camera queries do.
         run(pigeonResult(completion) { $0 as? FlutterStandardTypedData }, kind: .readsCamera) {
-            $0.mapTakeSnapshot(width: width, height: height, result: $1)
+            $0.mapTakeSnapshot(
+                width: width,
+                height: height,
+                attributionEnabled: attributionEnabled,
+                logoEnabled: logoEnabled,
+                result: $1
+            )
         }
     }
 
